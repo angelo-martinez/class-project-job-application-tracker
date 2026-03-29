@@ -1,0 +1,107 @@
+{% extends "base.html" %} {% block content %}
+<h1 class="mb-4">Dashboard</h1>
+
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-white bg-primary">
+      <div class="card-body text-center">
+        <h5 class="card-title">Companies</h5>
+        <p class="display-6">{{ total_companies }}</p>
+        <a href="{{ url_for('companies_add') }}" class="btn btn-light btn-sm">
+          + Add
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-white bg-success">
+      <div class="card-body text-center">
+        <h5 class="card-title">Jobs</h5>
+        <p class="display-6">{{ total_jobs }}</p>
+        <a href="{{ url_for('jobs_add') }}" class="btn btn-light btn-sm">
+          + Add
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-white bg-info">
+      <div class="card-body text-center">
+        <h5 class="card-title">Applications</h5>
+        <p class="display-6">{{ total_applications }}</p>
+        <a
+          href="{{ url_for('applications_add') }}"
+          class="btn btn-light btn-sm"
+        >
+          + Add
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-white bg-warning">
+      <div class="card-body text-center">
+        <h5 class="card-title">Contacts</h5>
+        <p class="display-6">{{ total_contacts }}</p>
+        <a href="{{ url_for('contacts_add') }}" class="btn btn-light btn-sm">
+          + Add
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-header"><strong>Applications by Status</strong></div>
+      <div class="card-body">
+        {% if status_counts %} {% for status, count in status_counts.items() %}
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="badge status-{{ status|lower }}">{{ status }}</span>
+          <span class="fw-bold">{{ count }}</span>
+        </div>
+        {% endfor %} {% else %}
+        <p class="text-muted">No applications yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-header"><strong>Recent Applications</strong></div>
+      <div class="card-body">
+        {% if recent_apps %}
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Job</th>
+              <th>Company</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for app in recent_apps %}
+            <tr>
+              <td>{{ app.application_date }}</td>
+              <td>{{ app.job_title }}</td>
+              <td>{{ app.company_name }}</td>
+              <td>
+                <span class="badge status-{{ app.status|lower }}">
+                  {{ app.status }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No applications yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

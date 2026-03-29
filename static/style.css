@@ -1,0 +1,55 @@
+body {
+  background-color: #f5f7fa;
+}
+
+.navbar-brand {
+  font-weight: 700;
+}
+
+.badge.status-applied {
+  background-color: #0d6efd;
+}
+
+.badge.status-screening {
+  background-color: #6f42c1;
+}
+
+.badge.status-interview {
+  background-color: #fd7e14;
+  color: #000;
+}
+
+.badge.status-offer {
+  background-color: #198754;
+}
+
+.badge.status-rejected {
+  background-color: #dc3545;
+}
+
+.badge.status-withdrawn {
+  background-color: #6c757d;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.display-6 {
+  font-weight: 700;
+}
+
+.table th {
+  font-weight: 600;
+}
+
+.progress {
+  height: 22px;
+  border-radius: 4px;
+}
+
+.progress-bar {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
