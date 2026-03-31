@@ -264,5 +264,151 @@ def jobs_delete(job_id):
     flash('Job deleted.', 'success')
     return redirect(url_for('jobs_list'))
 
+@app.route('/applications')
+def applications_list():
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('''
+        SELECT a.*, j.job_title, c.company_name
+        FROM applications a
+        JOIN jobs j ON a.job_id = j.job_id
+        JOIN companies c ON j.company_id = c.company_id
+        ORDER BY a.application_date DESC
+    ''')
+    applications = cursor.fetchall()
+    for app_row in applications:
+        if app_row['interview_data']:
+            if isinstance(app_row['interview_data'], str):
+                app_row['interview_data'] = json.loads(app_row['interview_data'])
+        else:
+            app_row['interview_data'] = {}
+    conn.close()
+    return render_template('applications.html', applications=applications)
+
+@app.route('/applications/add', methods=['GET', 'POST'])
+def applications_add():
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        job_id = request.form.get('job_id')
+        app_date = request.form.get('application_date', '').strip()
+        if not job_id or not app_date:
+            flash('Job and application date are required.', 'danger')
+            return redirect(url_for('applications_add'))
+
+        interview_raw = request.form.get('interview_data', '').strip()
+        interview_json = None
+        if interview_raw:
+            try:
+                json.loads(interview_raw)
+                interview_json = interview_raw
+            except json.JSONDecodeError:
+                flash('Interview data must be valid JSON.', 'danger')
+                return redirect(url_for('applications_add'))
+
+        cursor.execute(
+            '''INSERT INTO applications
+               (job_id, application_date, status, resume_version,
+                cover_letter_sent, interview_data)
+               VALUES (%s, %s, %s, %s, %s, %s)''',
+            (job_id,
+             app_date,
+             request.form.get('status') or 'Applied',
+             request.form.get('resume_version', '').strip() or None,
+             bool(request.form.get('cover_letter_sent')),
+             interview_json)
+        )
+        conn.commit()
+        conn.close()
+        flash('Application added successfully!', 'success')
+        return redirect(url_for('applications_list'))
+
+    cursor.execute('''
+        SELECT j.job_id, j.job_title, c.company_name
+        FROM jobs j
+        LEFT JOIN companies c ON j.company_id = c.company_id
+        ORDER BY c.company_name, j.job_title
+    ''')
+    jobs = cursor.fetchall()
+    conn.close()
+    return render_template('applications.html', form_mode='add', jobs=jobs)
+
+@app.route('/applications/<int:application_id>/edit', methods=['GET', 'POST'])
+def applications_edit(application_id):
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        job_id = request.form.get('job_id')
+        app_date = request.form.get('application_date', '').strip()
+        if not job_id or not app_date:
+            flash('Job and application date are required.', 'danger')
+            return redirect(url_for('applications_edit', application_id=application_id))
+
+        interview_raw = request.form.get('interview_data', '').strip()
+        interview_json = None
+        if interview_raw:
+            try:
+                json.loads(interview_raw)
+                interview_json = interview_raw
+            except json.JSONDecodeError:
+                flash('Interview data must be valid JSON.', 'danger')
+                return redirect(url_for('applications_edit', application_id=application_id))
+
+        cursor.execute(
+            '''UPDATE applications
+               SET job_id=%s, application_date=%s, status=%s,
+                   resume_version=%s, cover_letter_sent=%s, interview_data=%s
+               WHERE application_id=%s''',
+            (job_id,
+             app_date,
+             request.form.get('status') or 'Applied',
+             request.form.get('resume_version', '').strip() or None,
+             bool(request.form.get('cover_letter_sent')),
+             interview_json,
+             application_id)
+        )
+        conn.commit()
+        conn.close()
+        flash('Application updated successfully!', 'success')
+        return redirect(url_for('applications_list'))
+
+    cursor.execute('SELECT * FROM applications WHERE application_id = %s', (application_id,))
+    application = cursor.fetchone()
+    if not application:
+        conn.close()
+        flash('Application not found.', 'danger')
+        return redirect(url_for('applications_list'))
+
+    if application['interview_data']:
+        if isinstance(application['interview_data'], str):
+            application['interview_data_str'] = application['interview_data']
+        else:
+            application['interview_data_str'] = json.dumps(application['interview_data'])
+    else:
+        application['interview_data_str'] = ''
+
+    cursor.execute('''
+        SELECT j.job_id, j.job_title, c.company_name
+        FROM jobs j
+        LEFT JOIN companies c ON j.company_id = c.company_id
+        ORDER BY c.company_name, j.job_title
+    ''')
+    jobs = cursor.fetchall()
+    conn.close()
+    return render_template('applications.html', form_mode='edit',
+                           application=application, jobs=jobs)
+
+@app.route('/applications/<int:application_id>/delete', methods=['POST'])
+def applications_delete(application_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM applications WHERE application_id = %s', (application_id,))
+    conn.commit()
+    conn.close()
+    flash('Application deleted.', 'success')
+    return redirect(url_for('applications_list'))
+
 if __name__ == '__main__':
     app.run(debug=True)
