@@ -1,0 +1,206 @@
+{% extends "base.html" %} {% block content %} {% if form_mode == 'add' %}
+<h1 class="mb-4">Add Contact</h1>
+<div class="card">
+  <div class="card-body">
+    <form method="POST">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Contact Name *</label>
+          <input
+            type="text"
+            name="contact_name"
+            class="form-control"
+            required
+          />
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Company</label>
+          <select name="company_id" class="form-select">
+            <option value="">-- Select Company --</option>
+            {% for c in companies %}
+            <option value="{{ c.company_id }}">{{ c.company_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Title / Role</label>
+          <input type="text" name="title" class="form-control" />
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Phone</label>
+          <input type="tel" name="phone" class="form-control" />
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">LinkedIn URL</label>
+          <input
+            type="url"
+            name="linkedin_url"
+            class="form-control"
+            placeholder="https://linkedin.com/in/..."
+          />
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Notes</label>
+        <textarea name="notes" class="form-control" rows="3"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Add Contact</button>
+      <a href="{{ url_for('contacts_list') }}" class="btn btn-secondary"
+        >Cancel</a
+      >
+    </form>
+  </div>
+</div>
+
+{% elif form_mode == 'edit' %}
+<h1 class="mb-4">Edit Contact</h1>
+<div class="card">
+  <div class="card-body">
+    <form method="POST">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Contact Name *</label>
+          <input
+            type="text"
+            name="contact_name"
+            class="form-control"
+            value="{{ contact.contact_name }}"
+            required
+          />
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Company</label>
+          <select name="company_id" class="form-select">
+            <option value="">-- Select Company --</option>
+            {% for c in companies %}
+            <option value="{{ c.company_id }}" {{ "selected" if contact.company_id == c.company_id else "" }}>{{ c.company_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Title / Role</label>
+          <input
+            type="text"
+            name="title"
+            class="form-control"
+            value="{{ contact.title or '' }}"
+          />
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Email</label>
+          <input
+            type="email"
+            name="email"
+            class="form-control"
+            value="{{ contact.email or '' }}"
+          />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Phone</label>
+          <input
+            type="tel"
+            name="phone"
+            class="form-control"
+            value="{{ contact.phone or '' }}"
+          />
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">LinkedIn URL</label>
+          <input
+            type="url"
+            name="linkedin_url"
+            class="form-control"
+            value="{{ contact.linkedin_url or '' }}"
+          />
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Notes</label>
+        <textarea name="notes" class="form-control" rows="3">
+{{ contact.notes or '' }}</textarea
+        >
+      </div>
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+      <a href="{{ url_for('contacts_list') }}" class="btn btn-secondary"
+        >Cancel</a
+      >
+    </form>
+  </div>
+</div>
+
+{% else %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Contacts</h1>
+  <a href="{{ url_for('contacts_add') }}" class="btn btn-primary"
+    >+ Add Contact</a
+  >
+</div>
+
+{% if contacts %}
+<div class="table-responsive">
+  <table class="table table-striped table-hover">
+    <thead class="table-dark">
+      <tr>
+        <th>Name</th>
+        <th>Company</th>
+        <th>Title</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>LinkedIn</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ct in contacts %}
+      <tr>
+        <td>{{ ct.contact_name }}</td>
+        <td>{{ ct.company_name or '—' }}</td>
+        <td>{{ ct.title or '—' }}</td>
+        <td>
+          {% if ct.email %}
+          <a href="mailto:{{ ct.email }}">{{ ct.email }}</a>
+          {% else %}—{% endif %}
+        </td>
+        <td>{{ ct.phone or '—' }}</td>
+        <td>
+          {% if ct.linkedin_url %}
+          <a href="{{ ct.linkedin_url }}" target="_blank">Profile</a>
+          {% else %}—{% endif %}
+        </td>
+        <td class="text-nowrap">
+          <a
+            href="{{ url_for('contacts_edit', contact_id=ct.contact_id) }}"
+            class="btn btn-sm btn-warning"
+            >Edit</a
+          >
+          <form
+            method="POST"
+            action="{{ url_for('contacts_delete', contact_id=ct.contact_id) }}"
+            class="d-inline"
+            onsubmit="return confirm('Delete this contact?');"
+          >
+            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="text-muted">
+  No contacts yet. <a href="{{ url_for('contacts_add') }}">Add one!</a>
+</p>
+{% endif %} {% endif %} {% endblock %}

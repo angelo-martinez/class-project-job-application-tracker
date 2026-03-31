@@ -410,5 +410,105 @@ def applications_delete(application_id):
     flash('Application deleted.', 'success')
     return redirect(url_for('applications_list'))
 
+@app.route('/contacts')
+def contacts_list():
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('''
+        SELECT ct.*, c.company_name
+        FROM contacts ct
+        LEFT JOIN companies c ON ct.company_id = c.company_id
+        ORDER BY ct.contact_name
+    ''')
+    contacts = cursor.fetchall()
+    conn.close()
+    return render_template('contacts.html', contacts=contacts)
+
+@app.route('/contacts/add', methods=['GET', 'POST'])
+def contacts_add():
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        name = request.form.get('contact_name', '').strip()
+        if not name:
+            flash('Contact name is required.', 'danger')
+            return redirect(url_for('contacts_add'))
+
+        cursor.execute(
+            '''INSERT INTO contacts
+               (company_id, contact_name, title, email, phone, linkedin_url, notes)
+               VALUES (%s, %s, %s, %s, %s, %s, %s)''',
+            (request.form.get('company_id') or None,
+             name,
+             request.form.get('title', '').strip() or None,
+             request.form.get('email', '').strip() or None,
+             request.form.get('phone', '').strip() or None,
+             request.form.get('linkedin_url', '').strip() or None,
+             request.form.get('notes', '').strip() or None)
+        )
+        conn.commit()
+        conn.close()
+        flash('Contact added successfully!', 'success')
+        return redirect(url_for('contacts_list'))
+
+    cursor.execute('SELECT company_id, company_name FROM companies ORDER BY company_name')
+    companies = cursor.fetchall()
+    conn.close()
+    return render_template('contacts.html', form_mode='add', companies=companies)
+
+@app.route('/contacts/<int:contact_id>/edit', methods=['GET', 'POST'])
+def contacts_edit(contact_id):
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        name = request.form.get('contact_name', '').strip()
+        if not name:
+            flash('Contact name is required.', 'danger')
+            return redirect(url_for('contacts_edit', contact_id=contact_id))
+
+        cursor.execute(
+            '''UPDATE contacts
+               SET company_id=%s, contact_name=%s, title=%s,
+                   email=%s, phone=%s, linkedin_url=%s, notes=%s
+               WHERE contact_id=%s''',
+            (request.form.get('company_id') or None,
+             name,
+             request.form.get('title', '').strip() or None,
+             request.form.get('email', '').strip() or None,
+             request.form.get('phone', '').strip() or None,
+             request.form.get('linkedin_url', '').strip() or None,
+             request.form.get('notes', '').strip() or None,
+             contact_id)
+        )
+        conn.commit()
+        conn.close()
+        flash('Contact updated successfully!', 'success')
+        return redirect(url_for('contacts_list'))
+
+    cursor.execute('SELECT * FROM contacts WHERE contact_id = %s', (contact_id,))
+    contact = cursor.fetchone()
+    if not contact:
+        conn.close()
+        flash('Contact not found.', 'danger')
+        return redirect(url_for('contacts_list'))
+
+    cursor.execute('SELECT company_id, company_name FROM companies ORDER BY company_name')
+    companies = cursor.fetchall()
+    conn.close()
+    return render_template('contacts.html', form_mode='edit',
+                           contact=contact, companies=companies)
+
+@app.route('/contacts/<int:contact_id>/delete', methods=['POST'])
+def contacts_delete(contact_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM contacts WHERE contact_id = %s', (contact_id,))
+    conn.commit()
+    conn.close()
+    flash('Contact deleted.', 'success')
+    return redirect(url_for('contacts_list'))
+
 if __name__ == '__main__':
     app.run(debug=True)
