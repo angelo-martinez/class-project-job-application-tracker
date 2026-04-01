@@ -1,0 +1,83 @@
+{% extends "base.html" %} {% block content %}
+<h1 class="mb-4">Job Match</h1>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="POST">
+      <div class="mb-3">
+        <label class="form-label"
+          ><strong>Enter Your Skills</strong> (comma-separated)</label
+        >
+        <input
+          type="text"
+          name="skills"
+          class="form-control"
+          placeholder="Python, SQL, Flask, JavaScript"
+          value="{{ user_skills }}"
+        />
+      </div>
+      <button type="submit" class="btn btn-primary">Find Matching Jobs</button>
+    </form>
+  </div>
+</div>
+
+{% if results is not none %}
+<div class="card">
+  <div class="card-header">
+    <strong>Matching Jobs</strong>
+    <span class="text-muted">(Your skills: {{ user_skills }})</span>
+  </div>
+  <div class="card-body">
+    {% if results %}
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>Job Title</th>
+            <th>Company</th>
+            <th>Match %</th>
+            <th>Matched Skills</th>
+            <th>Missing Skills</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in results %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ r.job_title }}</td>
+            <td>{{ r.company_name or '—' }}</td>
+            <td>
+              <div class="progress" style="min-width: 80px">
+                <div
+                  class="progress-bar {% if r.match_pct >= 75 %}bg-success {% elif r.match_pct >= 50 %}bg-warning {% else %}bg-danger{% endif %}"
+                  style="width: {{ r.match_pct }}%"
+                >
+                  {{ r.match_pct }}%
+                </div>
+              </div>
+              <small>{{ r.matched_count }}/{{ r.total_skills }} skills</small>
+            </td>
+            <td>
+              {% for s in r.matched_skills %}
+              <span class="badge bg-success">{{ s }}</span>
+              {% endfor %}
+            </td>
+            <td>
+              {% if r.missing_skills %} {% for s in r.missing_skills %}
+              <span class="badge bg-secondary">{{ s }}</span>
+              {% endfor %} {% else %}
+              <span class="text-success">All matched!</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted">No jobs with requirements found in the database.</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %} {% endblock %}

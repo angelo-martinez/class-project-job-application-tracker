@@ -510,5 +510,54 @@ def contacts_delete(contact_id):
     flash('Contact deleted.', 'success')
     return redirect(url_for('contacts_list'))
 
+@app.route('/job-match', methods=['GET', 'POST'])
+def job_match():
+    results = None
+    user_skills = ''
+
+    if request.method == 'POST':
+        user_skills = request.form.get('skills', '').strip()
+        if not user_skills:
+            flash('Please enter at least one skill.', 'danger')
+            return redirect(url_for('job_match'))
+
+        skill_list = [s.strip().lower() for s in user_skills.split(',') if s.strip()]
+
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('''
+            SELECT j.job_id, j.job_title, j.requirements, c.company_name
+            FROM jobs j
+            LEFT JOIN companies c ON j.company_id = c.company_id
+            WHERE j.requirements IS NOT NULL
+        ''')
+        jobs = cursor.fetchall()
+        conn.close()
+
+        results = []
+        for job in jobs:
+            reqs = job['requirements']
+            if isinstance(reqs, str):
+                reqs = json.loads(reqs)
+            reqs_lower = [r.lower() for r in reqs]
+
+            matched = [s for s in skill_list if s in reqs_lower]
+            missing = [r for r in reqs if r.lower() not in skill_list]
+            pct = round(len(matched) / len(skill_list) * 100) if skill_list else 0
+
+            results.append({
+                'job_title': job['job_title'],
+                'company_name': job['company_name'],
+                'match_pct': pct,
+                'matched_count': len(matched),
+                'total_skills': len(skill_list),
+                'matched_skills': matched,
+                'missing_skills': missing
+            })
+
+        results.sort(key=lambda x: x['match_pct'], reverse=True)
+
+    return render_template('job_match.html', results=results, user_skills=user_skills)
+
 if __name__ == '__main__':
     app.run(debug=True)
