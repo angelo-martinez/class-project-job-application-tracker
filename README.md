@@ -30,7 +30,7 @@ This creates the `job_tracker` database with all 4 tables..
 
 ### 3. Configure Database Credentials
 
-Open `database.py` and update the `DB_CONFIG` dictionary with your MySQL credentials:
+Open `app.py` and update the `get_db` function with your MySQL credentials:
 
 ```python
 DB_CONFIG = {
@@ -62,7 +62,6 @@ Visit [http://127.0.0.1:5000/](http://127.0.0.1:5000/) in your browser.
 
 ```
 ├── app.py              # Main Flask application (all routes)
-├── database.py         # Database connection helper
 ├── schema.sql          # Database creation script with seed data
 ├── templates/          # Jinja2 HTML templates
 │   ├── base.html       # Base layout with navbar
